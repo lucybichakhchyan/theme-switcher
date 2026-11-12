@@ -1,0 +1,273 @@
+/* Light / dark / sunset toggle in the Lucy Bichakhchyan style.
+   A pill track with a round knob that slides between three stops.
+   Colors are registered custom properties, so the gradient, the knob
+   and the page ease between themes instead of snapping. */
+
+@property --bg        { syntax: "<color>"; inherits: true; initial-value: #1A1A1A; }
+@property --t1        { syntax: "<color>"; inherits: true; initial-value: #2D253A; }
+@property --t2        { syntax: "<color>"; inherits: true; initial-value: #574777; }
+@property --t3        { syntax: "<color>"; inherits: true; initial-value: #6A578F; }
+@property --stop      { syntax: "<color>"; inherits: true; initial-value: #BEADD6; }
+@property --knob      { syntax: "<color>"; inherits: true; initial-value: #1A1A1A; }
+@property --glyph     { syntax: "<color>"; inherits: true; initial-value: #AB8CF0; }
+@property --rim       { syntax: "<color>"; inherits: true; initial-value: #574777; }
+
+:root {
+  /* Dark: deep plum track, a near-black knob with a lilac moon */
+  --bg: #1A1A1A;
+  --t1: #2D253A;
+  --t2: #574777;
+  --t3: #6A578F;
+  --stop: #BEADD6;
+  --knob: #1A1A1A;
+  --glyph: #AB8CF0;
+  --rim: #574777;
+
+  --heavy: cubic-bezier(0.65, 0, 0.35, 1);
+  --settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --t: 700ms;
+
+  /* Size of the switch */
+  --w: 232px;
+  --h: 88px;
+  --pad: 8px;
+  --knob-size: calc(var(--h) - var(--pad) * 2);
+  --travel: calc((var(--w) - var(--pad) * 2 - var(--knob-size)) / 2);
+
+  color-scheme: dark;
+  transition:
+    --bg var(--t) var(--heavy), --t1 var(--t) var(--heavy), --t2 var(--t) var(--heavy),
+    --t3 var(--t) var(--heavy), --stop var(--t) var(--heavy), --knob var(--t) var(--heavy),
+    --glyph var(--t) var(--heavy), --rim var(--t) var(--heavy);
+}
+
+/* Light: soft lilac track, a white knob with a purple sun */
+:root[data-mood="light"] {
+  --bg: #F6F6F4;
+  --t1: #EEE9F6;
+  --t2: #DCCFF6;
+  --t3: #C4B0EE;
+  --stop: #6A578F;
+  --knob: #FFFFFF;
+  --glyph: #6A578F;
+  --rim: #C4B0EE;
+  color-scheme: light;
+}
+
+/* Sunset: plum warming into rose and amber, a deep plum knob for the glow */
+:root[data-mood="sunset"] {
+  --bg: #2D253A;
+  --t1: #574777;
+  --t2: #B4607E;
+  --t3: #E2A06E;
+  --stop: #FFF4EC;
+  --knob: #2D253A;
+  --glyph: #E2A06E;
+  --rim: #E2C184;
+  color-scheme: dark;
+}
+
+/* Used once on load so the saved theme appears without animating */
+:root.is-instant, :root.is-instant * { transition: none !important; }
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Sound on/off */
+.sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--stop);
+  opacity: 0.8;
+  font: 500 13px/1 "Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  cursor: pointer;
+  transition: opacity 300ms ease;
+}
+.sound:hover { opacity: 1; }
+.sound:focus-visible { opacity: 1; outline: 2px solid var(--glyph); outline-offset: 2px; }
+.sound svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sound__off { display: none; }
+.sound[aria-pressed="false"] .sound__wave { display: none; }
+.sound[aria-pressed="false"] .sound__off { display: inline; }
+
+/* Track */
+.toggle {
+  --i: 1;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  width: var(--w);
+  height: var(--h);
+  padding: var(--pad);
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--t1) 0%, var(--t2) 55%, var(--t3) 100%);
+  box-shadow: inset 0 0 0 1px var(--rim);
+}
+
+/* The three stops sit on the track; the knob covers the chosen one */
+.toggle__stop {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  height: var(--knob-size);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--stop);
+  opacity: 0.75;
+  cursor: pointer;
+  transition: opacity 300ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.toggle__stop:hover { opacity: 1; }
+.toggle__stop[aria-checked="true"] { opacity: 0; }
+.toggle__stop:focus-visible { opacity: 1; outline: 2px solid var(--glyph); outline-offset: 2px; }
+.toggle__stop svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 600ms var(--settle);
+}
+/* Small hover hints on the icons waiting on the track */
+.toggle__stop[data-mood="light"]:hover svg { transform: rotate(45deg) scale(1.1); }
+.toggle__stop[data-mood="dark"]:hover svg { transform: rotate(-18deg) scale(1.1); }
+.toggle__stop[data-mood="sunset"]:hover svg { transform: translateY(-2px) scale(1.1); }
+
+/* Knob: slides with a heavy ease; the face inside squashes as it travels */
+.toggle__knob {
+  position: absolute;
+  z-index: 2;
+  top: var(--pad);
+  left: var(--pad);
+  width: var(--knob-size);
+  height: var(--knob-size);
+  pointer-events: none;
+  transform: translateX(calc(var(--i) * var(--travel)));
+  transition: transform 640ms var(--heavy);
+}
+.toggle__face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--knob);
+  color: var(--glyph);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22), inset 0 0 0 1px var(--rim);
+}
+/* ---------- Knob icons ---------- */
+.glyph {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  overflow: visible;
+  opacity: 0;
+  transform: rotate(-70deg) scale(0.5);
+  transition: opacity 360ms ease, transform 760ms var(--settle);
+}
+/* Animated parts scale and turn around their own center */
+.ray, .sun-core, .moon-body, .star, .sunset-glow, .sunset-sun, .sunset-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+:root[data-mood="light"] .glyph--sun,
+:root[data-mood="dark"] .glyph--moon,
+:root[data-mood="sunset"] .glyph--sunset {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  transition-delay: 160ms;
+}
+
+/* Sun: rays fan out one by one, then the ring turns slowly */
+.ray {
+  stroke: #E2A06E;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  transform-origin: center bottom;
+}
+.sun-rays { transform-origin: 24px 24px; transform-box: view-box; }
+:root[data-mood="light"] .ray {
+  animation: ray-in 520ms var(--settle) calc(260ms + var(--n) * 55ms) backwards;
+}
+:root[data-mood="light"] .sun-rays { animation: spin 26s linear 900ms infinite; }
+:root[data-mood="light"] .sun-core { animation: core-in 700ms var(--settle) 160ms backwards; }
+
+/* Moon: a lit crescent, then stars pop in and twinkle */
+.star { fill: #F6F6F4; opacity: 0; }
+:root[data-mood="dark"] .star {
+  animation:
+    star-in 520ms var(--settle) calc(420ms + var(--d) * 120ms) forwards,
+    twinkle 2.6s ease-in-out calc(1100ms + var(--d) * 380ms) infinite;
+}
+:root[data-mood="dark"] .moon-body { animation: moon-in 800ms var(--settle) 160ms backwards; }
+
+/* Sunset: the sun sinks onto the horizon while a warm glow breathes */
+.sunset-line { stroke: #E2C184; stroke-width: 1.8; stroke-linecap: round; }
+.sunset-ripple { stroke: #E2A06E; stroke-width: 1.6; stroke-linecap: round; opacity: 0.75; }
+.sunset-glow { opacity: 0; }
+:root[data-mood="sunset"] .sunset-glow {
+  animation:
+    glow-in 900ms var(--settle) 200ms forwards,
+    breathe 3.4s ease-in-out 1100ms infinite;
+}
+:root[data-mood="sunset"] .sunset-sun { animation: sink 900ms var(--settle) 160ms backwards; }
+:root[data-mood="sunset"] .sunset-ripple {
+  animation:
+    ripple-in 600ms var(--settle) calc(500ms + var(--n) * 120ms) backwards,
+    shimmer 3.4s ease-in-out calc(1100ms + var(--n) * 300ms) infinite;
+}
+
+@keyframes spin      { to { transform: rotate(360deg); } }
+@keyframes ray-in    { from { transform: scaleY(0); opacity: 0; } }
+@keyframes core-in   { from { transform: scale(0.6); } }
+@keyframes moon-in   { from { transform: rotate(-35deg) scale(0.7); } }
+@keyframes star-in   { from { opacity: 0; transform: scale(0) rotate(-45deg); } to { opacity: 1; transform: scale(1) rotate(0deg); } }
+@keyframes twinkle   { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.7); } }
+@keyframes glow-in   { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes breathe   { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.12); } }
+@keyframes sink      { from { transform: translateY(-9px); } }
+@keyframes ripple-in { from { transform: scaleX(0); opacity: 0; } }
+@keyframes shimmer   { 0%, 100% { opacity: 0.75; } 50% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  :root, :root * { transition: none !important; animation: none !important; }
+  .star, .sunset-glow { opacity: 1; }
+}
